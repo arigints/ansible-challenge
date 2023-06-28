@@ -1,0 +1,52 @@
+- name: install all dependencies for controller
+  hosts: managed-host
+  become: true
+
+  tasks:
+    - name: install several packages
+      apt:
+        name:
+          - npm
+          - nodejs
+          - git
+          - pwgen
+          - unzip
+          - python3-virtualenv
+          - python3-pip
+        state: present
+
+    - name: add docker GPG apt key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: "deb https://download.docker.com/linux/ubuntu jammy stable"
+        state: present
+
+    - name: install dependencies 2
+      apt:
+        name: "{{item}}"
+        state: present
+      with_items:
+        - docker-ce
+        - docker-ce-cli
+        - docker-compose-plugin
+
+    - name: ensure docker service is started
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: adduser docker
+      shell: |
+        sudo groupadd docker
+        sudo usermod -aG docker $USER
+        sudo chmod 666 /var/run/docker.sock
+
+    - name: install docker compose using pip
+      pip:
+        name: docker-compose
+        executable: pip3
